@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Bus Reservation Database Inspector</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: var(--secondary);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            padding: 20px;
+            background: var(--light);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .tabs {
+            display: flex;
+            background: var(--dark);
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 15px 25px;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 25px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: var(--secondary);
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-primary { color: var(--primary); }
+        .stat-success { color: var(--success); }
+        .stat-warning { color: var(--warning); }
+        .stat-danger { color: var(--danger); }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .page-btn {
+            padding: 8px 15px;
+            background: var(--light);
+            border: 1px solid #ddd;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .page-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: var(--secondary);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+        
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--light);
+            border-top: 1px solid #ddd;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-database"></i> Bus Reservation Database Inspector</h1>
+            <div class="subtitle">Comprehensive database visualization and management tool</div>
+        </header>
+        
+        <div class="controls">
+            <input type="text" class="search-box" id="searchInput" placeholder="Search across all tables...">
+            <button class="btn btn-primary" onclick="refreshAllData()">
+                <i class="fas fa-sync-alt"></i> Refresh All Data
+            </button>
+            <button class="btn btn-success" onclick="showStatistics()">
+                <i class="fas fa-chart-bar"></i> View Statistics
+            </button>
+            <select id="tableSelector" class="btn btn-warning" onchange="changeTable(this.value)">
+                <option value="users">Users Table</option>
+                <option value="buses">Buses Table</option>
+                <option value="reservations">Reservations Table</option>
+                <option value="payments">Payments Table</option>
+            </select>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview')">Overview</button>
+            <button class="tab" onclick="showTab('users')">Users</button>
+            <button class="tab" onclick="showTab('buses')">Buses</button>
+            <button class="tab" onclick="showTab('reservations')">Reservations</button>
+            <button class="tab" onclick="showTab('payments')">Payments</button>
+            <button class="tab" onclick="showTab('statistics')">Statistics</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <h2><i class="fas fa-tachometer-alt"></i> Database Overview</h2>
+            <div class="stats-grid" id="overview-stats">
+                <div class="loading">Loading database overview...</div>
+            </div>
+            
+            <h3 style="margin-top: 30px;"><i class="fas fa-history"></i> Recent Activity</h3>
+            <div id="recent-activity">
+                <div class="loading">Loading recent activity...</div>
+            </div>
+        </div>
+        
+        <!-- Users Tab -->
+        <div id="users" class="tab-content">
+            <h2><i class="fas fa-users"></i> Users Table</h2>
+            <div id="users-content">
+                <div class="loading">Loading users data...</div>
+            </div>
+        </div>
+        
+        <!-- Buses Tab -->
+        <div id="buses" class="tab-content">
+            <h2><i class="fas fa-bus"></i> Buses Table</h2>
+            <div id="buses-content">
+                <div class="loading">Loading buses data...</div>
+            </div>
+        </div>
+        
+        <!-- Reservations Tab -->
+        <div id="reservations" class="tab-content">
+            <h2><i class="fas fa-ticket-alt"></i> Reservations Table</h2>
+            <div id="reservations-content">
+                <div class="loading">Loading reservations data...</div>
+            </div>
+        </div>
+        
+        <!-- Payments Tab -->
+        <div id="payments" class="tab-content">
+            <h2><i class="fas fa-money-bill-wave"></i> Payments Table</h2>
+            <div id="payments-content">
+                <div class="loading">Loading payments data...</div>
+            </div>
+        </div>
+        
+        <!-- Statistics Tab -->
+        <div id="statistics" class="tab-content">
+            <h2><i class="fas fa-chart-pie"></i> Database Statistics</h2>
+            <div id="statistics-content">
+                <div class="loading">Loading statistics...</div>
+            </div>
+        </div>
+        
+        <div class="timestamp" id="last-updated">
+            Last updated: Loading...
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let currentTable = 'users';
+        let currentSearch = '';
+        
+        // Utility functions
+        async function apiCall(endpoint) {
+            try {
+                const response = await fetch(`/api/debug${endpoint}`);
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleString();
+        }
+        
+        function formatCurrency(amount) {
+            return `${parseFloat(amount).toFixed(2)} FCFA`;
+        }
+        
+        function getStatusBadge(status) {
+            const classes = {
+                'completed': 'badge-success',
+                'pending': 'badge-warning',
+                'cancelled': 'badge-danger',
+                'active': 'badge-success'
+            };
+            return `<span class="status-badge ${classes[status] || 'badge-warning'}">${status}</span>`;
+        }
+        
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load data for the tab if needed
+            switch(tabName) {
+                case 'overview':
+                    loadOverview();
+                    break;
+                case 'users':
+                    loadData('users');
+                    break;
+                case 'buses':
+                    loadData('buses');
+                    break;
+                case 'reservations':
+                    loadData('reservations');
+                    break;
+                case 'payments':
+                    loadData('payments');
+                    break;
+                case 'statistics':
+                    loadStatistics();
+                    break;
+            }
+        }
+        
+        // Data Loading Functions
+        async function loadOverview() {
+            const data = await apiCall('/database-state');
+            if (data.success) {
+                renderOverviewStats(data);
+            }
+        }
+        
+        async function loadData(table) {
+            const contentId = `${table}-content`;
+            document.getElementById(contentId).innerHTML = '<div class="loading">Loading data...</div>';
+            
+            const data = await apiCall(`/query?table=${table}&limit=50&search=${encodeURIComponent(currentSearch)}`);
+            if (data.success) {
+                renderTableData(table, data.data, contentId);
+            } else {
+                document.getElementById(contentId).innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Error loading data: ${data.error}</div>`;
+            }
+        }
+        
+        async function loadStatistics() {
+            const data = await apiCall('/statistics');
+            if (data.success) {
+                renderStatistics(data.statistics);
+            }
+        }
+        
+        // Rendering Functions
+        function renderOverviewStats(data) {
+            const statsContainer = document.getElementById('overview-stats');
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <h3><i class="fas fa-users"></i> Total Users</h3>
+                    <div class="stat-value stat-primary">${data.summary.total_users}</div>
+                    <div>Active accounts</div>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-bus"></i> Total Buses</h3>
+                    <div class="stat-value stat-success">${data.summary.total_buses}</div>
+                    <div>Operational routes</div>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-user-tie"></i> Employees</h3>
+                    <div class="stat-value stat-warning">${data.summary.total_employees}</div>
+                    <div>Assigned staff</div>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-ticket-alt"></i> Reservations</h3>
+                    <div class="stat-value stat-primary">${data.summary.total_reservations}</div>
+                    <div>Bookings made</div>
+                </div>
+                <div class="stat-card">
+                    <h3><i class="fas fa-money-bill-wave"></i> Payments</h3>
+                    <div class="stat-value stat-success">${data.summary.total_payments}</div>
+                    <div>Transactions completed</div>
+                </div>
+            `;
+            
+            // Render recent activity
+            renderRecentActivity(data);
+        }
+        
+        function renderRecentActivity(data) {
+            const activityContainer = document.getElementById('recent-activity');
+            
+            // Combine all recent entries and sort by date
+            const allEntries = [
+                ...data.database.users.data.map(u => ({...u, type: 'user', created_at: u.created_at})),
+                ...data.database.buses.data.map(b => ({...b, type: 'bus', created_at: b.created_at})),
+                ...data.database.reservations.data.map(r => ({...r, type: 'reservation', created_at: r.created_at})),
+                ...data.database.payments.data.map(p => ({...p, type: 'payment', created_at: p.created_at}))
+            ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
+            
+            if (allEntries.length === 0) {
+                activityContainer.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i>No recent activity found</div>';
+                return;
+            }
+            
+            let activityHTML = '<table><thead><tr><th>Type</th><th>Description</th><th>Date</th></tr></thead><tbody>';
+            
+            allEntries.forEach(entry => {
+                let description = '';
+                switch(entry.type) {
+                    case 'user':
+                        description = `New user registered: ${entry.name} (${entry.email})`;
+                        break;
+                    case 'bus':
+                        description = `New bus added: ${entry.bus_number} (${entry.route})`;
+                        break;
+                    case 'reservation':
+                        description = `Reservation #${entry.id} created for seat ${entry.seat_number}`;
+                        break;
+                    case 'payment':
+                        description = `Payment of ${formatCurrency(entry.amount)} completed`;
+                        break;
+                }
+                
+                activityHTML += `
+                    <tr>
+                        <td><strong>${entry.type.charAt(0).toUpperCase() + entry.type.slice(1)}</strong></td>
+                        <td>${description}</td>
+                        <td>${formatDate(entry.created_at)}</td>
+                    </tr>
+                `;
+            });
+            
+            activityHTML += '</tbody></table>';
+            activityContainer.innerHTML = activityHTML;
+        }
+        
+        function renderTableData(table, data, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (data.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i>No ${table} found</div>`;
+                return;
+            }
+            
+            let tableHTML = '<table><thead><tr>';
+            
+            // Generate headers based on table type
+            switch(table) {
+                case 'users':
+                    tableHTML += '<th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Wallet</th><th>Created</th>';
+                    break;
+                case 'buses':
+                    tableHTML += '<th>ID</th><th>Bus Number</th><th>Route</th><th>Seats</th><th>Available</th><th>Price</th><th>Created</th>';
+                    break;
+                case 'reservations':
+                    tableHTML += '<th>ID</th><th>User</th><th>Bus</th><th>Seat</th><th>Status</th><th>Created</th>';
+                    break;
+                case 'payments':
+                    tableHTML += '<th>ID</th><th>Reservation</th><th>User</th><th>Amount</th><th>Deposit</th><th>Status</th><th>Created</th>';
+                    break;
+            }
+            
+            tableHTML += '</tr></thead><tbody>';
+            
+            // Generate rows
+            data.forEach(item => {
+                switch(table) {
+                    case 'users':
+                        tableHTML += `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.name}</td>
+                                <td>${item.email}</td>
+                                <td><span class="status-badge ${item.role === 'admin' ? 'badge-success' : 'badge-warning'}">${item.role}</span></td>
+                                <td>${formatCurrency(item.wallet_balance)}</td>
+                                <td>${formatDate(item.created_at)}</td>
+                            </tr>
+                        `;
+                        break;
+                    case 'buses':
+                        tableHTML += `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.bus_number}</td>
+                                <td>${item.route}</td>
+                                <td>${item.total_seats}</td>
+                                <td>${item.available_seats}</td>
+                                <td>${formatCurrency(item.price)}</td>
+                                <td>${formatDate(item.created_at)}</td>
+                            </tr>
+                        `;
+                        break;
+                    case 'reservations':
+                        tableHTML += `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.user_name || `User #${item.user_id}`}</td>
+                                <td>${item.bus_number || `Bus #${item.bus_id}`}</td>
+                                <td>${item.seat_number}</td>
+                                <td>${getStatusBadge(item.status)}</td>
+                                <td>${formatDate(item.created_at)}</td>
+                            </tr>
+                        `;
+                        break;
+                    case 'payments':
+                        tableHTML += `
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>#${item.reservation_id}</td>
+                                <td>${item.user_name || `User #${item.user_id}`}</td>
+                                <td>${formatCurrency(item.amount)}</td>
+                                <td>${formatCurrency(item.deposit)}</td>
+                                <td>${getStatusBadge(item.status)}</td>
+                                <td>${formatDate(item.created_at)}</td>
+                            </tr>
+                        `;
+                        break;
+                }
+            });
+            
+            tableHTML += '</tbody></table>';
+            container.innerHTML = tableHTML;
+        }
+        
+        function renderStatistics(stats) {
+            const container = document.getElementById('statistics-content');
+            
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3><i class="fas fa-users"></i> User Statistics</h3>
+                        <p><strong>Total Users:</strong> ${stats.users.total_users}</p>
+                        <p><strong>Admins:</strong> ${stats.users.admin_count}</p>
+                        <p><strong>Regular Users:</strong> ${stats.users.regular_users}</p>
+                        <p><strong>Avg Wallet Balance:</strong> ${formatCurrency(stats.users.avg_wallet_balance || 0)}</p>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3><i class="fas fa-bus"></i> Bus Statistics</h3>
+                        <p><strong>Total Buses:</strong> ${stats.buses.total_buses}</p>
+                        <p><strong>Total Capacity:</strong> ${stats.buses.total_capacity} seats</p>
+                        <p><strong>Available Seats:</strong> ${stats.buses.total_available_seats}</p>
+                        <p><strong>Avg Ticket Price:</strong> ${formatCurrency(stats.buses.avg_ticket_price || 0)}</p>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3><i class="fas fa-ticket-alt"></i> Reservation Stats</h3>
+                        <p><strong>Total Reservations:</strong> ${stats.reservations.total_reservations}</p>
+                        <p><strong>Completed:</strong> ${stats.reservations.completed_reservations}</p>
+                        <p><strong>Pending:</strong> ${stats.reservations.pending_reservations}</p>
+                        <p><strong>Cancelled:</strong> ${stats.reservations.cancelled_reservations}</p>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3><i class="fas fa-money-bill-wave"></i> Payment Statistics</h3>
+                        <p><strong>Total Payments:</strong> ${stats.payments.total_payments}</p>
+                        <p><strong>Completed:</strong> ${stats.payments.completed_payments}</p>
+                        <p><strong>Pending:</strong> ${stats.payments.pending_payments}</p>
+                        <p><strong>Total Revenue:</strong> ${formatCurrency(stats.payments.total_revenue || 0)}</p>
+                        <p><strong>Avg Payment:</strong> ${formatCurrency(stats.payments.avg_payment_amount || 0)}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Event Handlers
+        function refreshAllData() {
+            loadOverview();
+            ['users', 'buses', 'reservations', 'payments'].forEach(table => {
+                if (document.getElementById(table).classList.contains('active')) {
+                    loadData(table);
+                }
+            });
+            loadStatistics();
+            updateTimestamp();
+        }
+        
+        function showStatistics() {
+            showTab('statistics');
+        }
+        
+        function changeTable(table) {
+            currentTable = table;
+            loadData(table);
+        }
+        
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            currentSearch = e.target.value;
+            const activeTab = document.querySelector('.tab-content.active').id;
+            if (['users', 'buses', 'reservations', 'payments'].includes(activeTab)) {
+                loadData(activeTab);
+            }
+        });
+        
+        // Auto-refresh
+        setInterval(refreshAllData, 30000); // Refresh every 30 seconds
+        
+        function updateTimestamp() {
+            document.getElementById('last-updated').textContent = 
+                `Last updated: ${new Date().toLocaleString()}`;
+        }
+        
+        // Initialize
+        window.onload = function() {
+            refreshAllData();
+            updateTimestamp();
+        };
+    </script>
+</body>
+</html>

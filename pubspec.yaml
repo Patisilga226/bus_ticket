@@ -1,0 +1,39 @@
+name: bus_admin_dashboard_flutter
+description: Tableau de bord admin pour gestion de transport & tickets bus.
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.6
+
+  # UI & charts
+  google_fonts: ^6.2.1
+  fl_chart: ^0.69.0
+  
+  # Networking
+  http: ^1.2.2
+  
+  # Export functionality
+  pdf: ^3.10.8
+  printing: ^5.12.2
+  excel: ^4.0.6
+  path_provider: ^2.1.5
+  
+  # File handling
+  file_picker: ^8.0.3
+  csv: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
